@@ -16,7 +16,7 @@ Routes.prototype.init = function () {
     var self = this;
     var app = self.server;
     app.get('/',function (req,res) {
-        res.send("hello welcome...");
+        res.send("Hungarian tool Running...");
     });
 
     app.post('/login',function (req,res) {

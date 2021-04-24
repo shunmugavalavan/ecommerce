@@ -63,7 +63,7 @@ Actions.prototype.authenticate = async function (req) {
                     loginResult['data'] = loginData;
                 
                     self.serviceInstance.createEntities(self.conf.tables.loginHis,{adminId:loginData['id'],name:loginData['name']})
-                    loginResult['message'] = `Welcome ${loginData['name']}`;
+                    loginResult['message'] = `Welcome, ${loginData['name']}`;
                     return loginResult;
                 } else {
                     loginResult['message'] = "name or password is incorrect";
@@ -144,7 +144,7 @@ Actions.prototype.addNewEntry = async function (request) {
         createdDate:middleware.getDate()
     };
 
-  console.log("insertCriteria",insertCriteria);
+  console.log("Add Entry Criteria",insertCriteria);
 
     return new Promise(function (resolve, reject) {
         var findCriteria = {
@@ -161,9 +161,9 @@ Actions.prototype.addNewEntry = async function (request) {
             
         })
             .then(function (entryResult) {
-                console.log("entryResult",entryResult);
+               
                 if (entryResult && entryResult.status) {
-                    
+                    console.log("new entry added Successfully..");
                     var entryHis = JSON.parse(JSON.stringify(insertCriteria));
                     entryHis['allocationEntryId'] = entryResult.data;
                     entryHis['adminId'] = request['user']['id'];
@@ -174,6 +174,7 @@ Actions.prototype.addNewEntry = async function (request) {
                     response['message'] = 'Entry added successfully.'
                     return response;
                 } else {
+                    console.log("Failed to add New Entry");
                     response['message'] = "Failed to add Entry";
                     return response;
                 }
@@ -221,22 +222,39 @@ Actions.prototype.updateExistEntry = async function (request) {
         return Promise.resolve(response);
     }
 
+    if (!middleware.isValidIPFormat(req.systemIP)) {
+        response['message'] = 'invalid IP is Address format';
+        return Promise.resolve(response);
+        // throw('invalid IP is Address format');
+    }
+
+    if (falseValues.includes(req.isActive)) {
+        response['message'] = 'Connection Status is missing';
+        return Promise.resolve(response);
+        // throw('Connection Status is missing');
+    }
+
+
     return new Promise(function(resolve, reject) {
 
             var findCriteria = {
                 condition:`allocationEntryId != ${req.allocationEntryId} AND ( systemID = '${req.systemID}' OR systemIP = '${req.systemIP}')`
-            }
-            
+            };
+       
+       console.log("\n Checking for Duplicate Entry");
+
        self.serviceInstance.getEntities(tableName,findCriteria)
        .then(function(dbResult) {
-
         if(dbResult && dbResult.status){
             if(req.systemIP == dbResult.data[0]['systemIP']){
+                console.log("\n Duplicate IP Entry Found");
                 throw (`Duplicate IP Entry`);
-            }else{
-                throw (`Duplicate system ID Entry `);
+            }else{ 
+                console.log("\n Duplicate system ID Entry Found");
+                throw (`Duplicate system ID Entry `); 
             }
         }else{
+            console.log("\n No Duplicate Entry. Checking for exist Entry ");
             var findCriteria1 = {
                 condition:`allocationEntryId = ${req.allocationEntryId}`
             };
@@ -246,11 +264,14 @@ Actions.prototype.updateExistEntry = async function (request) {
 
        })
         .then(function(dbResult) {
-            console.log("dbResult ",dbResult);
-
+         
             if(dbResult && !dbResult.status){
-                throw (`No system found with ID  ${req.systemID}`);
+                console.log("\n No system Entry found with ID "+req.systemID);
+                throw (`No system Entry found with ID  ${req.systemID}`);
             }
+
+            console.log("\n system Entry found & Reaady to Update ");
+
             entryHisCriteria['allocationEntryId'] = dbResult.data[0]['allocationEntryId'];
 
             updateCriteria['condition'] = `allocationEntryId = ${req.allocationEntryId}`;
@@ -258,14 +279,11 @@ Actions.prototype.updateExistEntry = async function (request) {
 
             entryHisCriteria['systemID'] = `${req.systemID}`;
             
-           if (falseValues.includes(req.systemIP)) {
-                throw('system IP is missing');
-            }
+        //    if (falseValues.includes(req.systemIP)) {
+        //         throw('system IP is missing');
+        //     }
     
-            if (!middleware.isValidIPFormat(req.systemIP)) {
-                throw('invalid IP is Address format');
-            }
-            
+       
             if (falseValues.includes(req.workLocationType)) {
                 throw('location type HOME/OFFICE is missing');
             }
@@ -274,10 +292,6 @@ Actions.prototype.updateExistEntry = async function (request) {
                 throw('location type should be HOME/OFFICE');
             }
 
-            if (falseValues.includes(req.isActive)) {
-                throw('is Active is missing');
-            }
-            
                 updateCriteria['set']+= `,systemIP = '${req.systemIP}' `;
                 entryHisCriteria['systemIP'] = `${req.systemIP}`;
                 entryHisCriteria['adminId'] = request['user']['id'];
@@ -313,9 +327,11 @@ Actions.prototype.updateExistEntry = async function (request) {
         })
         .then(function(updateResult) {
             if(updateResult && updateResult.status){
-                self.serviceInstance.createEntities(self.conf.tables.allocSysIPHis,entryHisCriteria);
+                console.log("Entry updated successfully");
+                self.serviceInstance.createEntities(self.conf.tables.allocSysIPHis,entryHisCriteria);  
                 updateResult['message'] = 'Entry updated successfully';
             }else{
+                console.log("Failed to update Entry..");
                 updateResult['message'] = 'Failed to update Existing Entry';
             }
 
@@ -342,30 +358,33 @@ Actions.prototype.checkIsValidIP = async function (request) {
         message: ''
     };
 
-    console.log("request.ip",request.ip);
-    var systemIP =  request.ip.split(":").pop();
-    systemIP = '192.168.0.2';
-    console.log("req.ip.split", systemIP);
+    // console.log("request.ip",request.ip);
+    var systemIP =  req.connection.remoteAddress;
+    // systemIP = '192.168.0.2';
+    // console.log("req.ip.split", systemIP);
 // return;
     return new Promise(function(resolve, reject) {
 
             var findCriteria = {
                 condition:`systemIP = '${systemIP}'`
-            }
-            
+            };
+
+       console.log("\n"+newDate()+" Cheking for Entry: "+systemIP);
+
        self.serviceInstance.getEntities(tableName,findCriteria)
         .then(function(dbResult) {
-            console.log("dbResult ",dbResult);
-           
+       
             if(dbResult && dbResult.status){
                 var entryHisCriteria = dbResult.data[0];
                 if(dbResult.data[0]['isActive']){
+                    console.log("\n Valid system Entry with IP: "+systemIP);
                     response['status'] = true;
                     response['message'] = 'valid IP';
                     entryHisCriteria['action'] = 'KNOWN-IP,ACTIVE-STATE';
                 }else{
+                    console.log("\n Valid system Entry But IP Blocked : "+systemIP);
                     response['status'] = false;
-                    response['message'] = 'IP address is Deactivated.';
+                    response['message'] = 'IP Address Blocked By System Admin. Please Contact System Admin';
                     entryHisCriteria['action'] = 'KNOWN-IP,INACTIVE-STATE';
                 }
                 delete entryHisCriteria['createdDate'];
@@ -373,10 +392,9 @@ Actions.prototype.checkIsValidIP = async function (request) {
 
                 entryHisCriteria['createdDate'] = middleware.getDate();
                 // entryHisCriteria['adminId'] = null;
-                
-                
-               
+                  
             }else{
+                console.log("\n"+newDate()+" No Entry Found & Unkown system IP : "+systemIP);
                 var entryHisCriteria = {
                     allocationEntryId:null,
                     employeeId:null,
@@ -400,7 +418,7 @@ Actions.prototype.checkIsValidIP = async function (request) {
             resolve(finalResult);
         })
         .catch(function (err) {
-            console.log(new Date()," Error at Update Entry ",err);
+            console.log(new Date()," Error at Checking Entry ",err);
             response['message'] = err;
             resolve(response);
         })
@@ -414,7 +432,7 @@ Actions.prototype.getEntry = function (request) {
         status: false,
         message: ''
     };
-
+    console.log("\n"+newDate()+" Getting System Entries ");
     return new Promise(function(resolve, reject) {
 
         var criteria = {
@@ -424,8 +442,10 @@ Actions.prototype.getEntry = function (request) {
    self.serviceInstance.getEntities(tableName,criteria)
     .then(function(findResult) {
         if(findResult && findResult.status){
+            console.log("\n System Entries Found");
             findResult['message'] =`${findResult.data.length} Entry found.`;
         }else{
+            console.log("\n No System Entries Found");
             findResult['message'] =`No Entry found.`
         }
         resolve(findResult)
@@ -460,14 +480,15 @@ Actions.prototype.deleteExistEntry = async function (request) {
             var criteria = {
                 condition:`allocationEntryId = ${parseInt(req.allocationEntryId)}`
             };
-            
+       console.log("\n"+newDate()+" Checking System for Delete: ",req.allocationEntryId);
        self.serviceInstance.getEntities(tableName,criteria)
         .then(function(dbResult) {
            
             if(dbResult && !dbResult.status){
+               console.log("\n Entry not found to delete");
                throw('Entry not found'); 
             }
-            console.log("dbResult",dbResult);
+            console.log("\n Entry found to delete");
             deleteCriteria = dbResult['data'][0];
             delete deleteCriteria['createdDate'];
             delete deleteCriteria['updatedDate'];
@@ -476,9 +497,11 @@ Actions.prototype.deleteExistEntry = async function (request) {
         })
         .then(function(deleteResult) {
             if(deleteResult && !deleteResult.status){
+                console.log("\n Failed to Delete Entry.."+req.allocationEntryId);
                throw('Failed to delete Entry'); 
             }
-
+            
+            console.log("\n Entry Delete Successfully.."+req.allocationEntryId);
             response['status'] = true;
             response['message'] = 'Entry Deleted Successfully.';
 
