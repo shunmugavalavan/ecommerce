@@ -30,15 +30,17 @@ exports.authenticateToken = function (req, res, next) {
 
   if (token == null) {
     var string = encodeURIComponent();
-    return res.redirect(`${conf.web.url}/login?status=sessionExpired`);
-    // return res.sendStatus(401);
+    req.method = 'get'; 
+    // return res.redirect(`${conf.web.url}/login?status=sessionExpired`);
+    return res.sendStatus(401);
   }
 
   jwt.verify(token, conf.jsonwebtoken.secret, (err, user) => {
     if (err) {
       // console.log(err);
-      // return res.sendStatus(403);
-      return res.redirect(`${conf.web.url}/login?status=sessionExpired`);
+      return res.sendStatus(403);
+      
+      // return res.redirect(`${conf.web.url}/login?status=sessionExpired`);
     }
 
     req.user = user
