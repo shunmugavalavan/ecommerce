@@ -37,12 +37,14 @@ exports.authenticateToken = function (req, res, next) {
 
   jwt.verify(token, conf.jsonwebtoken.secret, (err, user) => {
     if (err) {
+
       // console.log(err);
       return res.sendStatus(403);
       
       // return res.redirect(`${conf.web.url}/login?status=sessionExpired`);
     }
-
+    req.customerId = user.customerId;
+// console.log("user",user)
     req.user = user
     next()
   })

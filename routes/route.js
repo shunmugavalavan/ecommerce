@@ -15,15 +15,31 @@ module.exports = Routes;
 Routes.prototype.init = function () {
     var self = this;
     var app = self.server;
+
     app.get('/',function (req,res) {
-        res.send("Hungarian tool Running...");
+        res.send("server is Running...");
     });
+
+    app.post('/register',function (req,res) {
+
+        Promise.resolve()
+        .then(function(){
+            return self.apiActionInstance.register(req)
+        })
+        .then(function(finalResult){
+           res.send(finalResult);
+        })
+        .catch(function(err){
+            console.log("Error at /register ",err);
+            res.send(err);
+        })
+    })
 
     app.post('/login',function (req,res) {
 
         Promise.resolve()
         .then(function(){
-            return self.apiActionInstance.authenticate(req)
+            return self.apiActionInstance.login(req)
         })
         .then(function(finalResult){
            res.send(finalResult);
@@ -34,77 +50,151 @@ Routes.prototype.init = function () {
         })
     })
 
-    app.post('/addEntry',middleware.authenticateToken,function (req,res) {
+    app.get('/getBrands',middleware.authenticateToken,function (req,res) {
 
         Promise.resolve()
         .then(function(){
-            return self.apiActionInstance.addNewEntry(req)
+            return self.apiActionInstance.getBrands(req)
         })
         .then(function(finalResult){
            res.send(finalResult);
         })
         .catch(function(err){
-            console.log("Error at /addEntry ",err);
+            console.log("Error at /getBrands ",err);
             res.send(err);
         })
     })
 
-    app.get('/getEntry',middleware.authenticateToken,function (req,res) {
+    app.get('/getSuppliers',middleware.authenticateToken,function (req,res) {
 
         Promise.resolve()
         .then(function(){
-            return self.apiActionInstance.getEntry(req)
+            return self.apiActionInstance.getSuppliers(req)
         })
         .then(function(finalResult){
            res.send(finalResult);
         })
         .catch(function(err){
-            console.log("Error at /getEntry ",err);
+            console.log("Error at /getSuppliers ",err);
             res.send(err);
         })
     })
 
-    app.post('/updateEntry',middleware.authenticateToken,function (req,res) {
+    app.get('/getProducts',middleware.authenticateToken,function (req,res) {
 
         Promise.resolve()
         .then(function(){
-            return self.apiActionInstance.updateExistEntry(req)
+            return self.apiActionInstance.getProducts(req)
         })
         .then(function(finalResult){
            res.send(finalResult);
         })
         .catch(function(err){
-            console.log("Error at /addEntry ",err);
+            console.log("Error at /getProducts ",err);
             res.send(err);
         })
     })
 
-    app.post('/deleteEntry',middleware.authenticateToken,function (req,res) {
+    app.post('/addProduct',middleware.authenticateToken,function (req,res) {
 
         Promise.resolve()
         .then(function(){
-            return self.apiActionInstance.deleteExistEntry(req)
+            return self.apiActionInstance.addNewProduct(req)
         })
         .then(function(finalResult){
            res.send(finalResult);
         })
         .catch(function(err){
-            console.log("Error at /addEntry ",err);
+            console.log("Error at /addProduct ",err);
+            res.send(err);
+        })
+    })
+// middleware.authenticateToken
+app.post('/updateProduct',middleware.authenticateToken,function (req,res) {
+
+    Promise.resolve()
+    .then(function(){
+        return self.apiActionInstance.updateProduct(req)
+    })
+    .then(function(finalResult){
+       res.send(finalResult);
+    })
+    .catch(function(err){
+        console.log("Error at /updateProduct ",err);
+        res.send(err);
+    })
+})
+
+app.get('/getMyOrders',middleware.authenticateToken,function (req,res) {
+
+    Promise.resolve()
+    .then(function(){
+        return self.apiActionInstance.getMyOrder(req)
+    })
+    .then(function(finalResult){
+       res.send(finalResult);
+    })
+    .catch(function(err){
+        console.log("Error at /getMyOrders ",err);
+        res.send(err);
+    })
+})
+
+app.get('/getAllOrders',middleware.authenticateToken,function (req,res) {
+
+    Promise.resolve()
+    .then(function(){
+        return self.apiActionInstance.getAllOrder(req)
+    })
+    .then(function(finalResult){
+       res.send(finalResult);
+    })
+    .catch(function(err){
+        console.log("Error at /getAllOrders ",err);
+        res.send(err);
+    })
+})
+    app.post('/placeOrder',middleware.authenticateToken,function (req,res) {
+
+        Promise.resolve()
+        .then(function(){
+            return self.apiActionInstance.placeOrder(req)
+        })
+        .then(function(finalResult){
+           res.send(finalResult);
+        })
+        .catch(function(err){
+            console.log("Error at /placeOrder ",err);
             res.send(err);
         })
     })
 
-    app.get('/checkIsValidIP',function (req,res) {
+    app.post('/cancelOrder',middleware.authenticateToken,function (req,res) {
 
         Promise.resolve()
         .then(function(){
-            return self.apiActionInstance.checkIsValidIP(req)
+            return self.apiActionInstance.cancelOrder(req)
         })
         .then(function(finalResult){
            res.send(finalResult);
         })
         .catch(function(err){
-            console.log("Error at /checkIsValidIP ",err);
+            console.log("Error at /cancelOrder ",err);
+            res.send(err);
+        })
+    })
+
+    app.post('/orderDelivered',middleware.authenticateToken,function (req,res) {
+
+        Promise.resolve()
+        .then(function(){
+            return self.apiActionInstance.orderDelivered(req)
+        })
+        .then(function(finalResult){
+           res.send(finalResult);
+        })
+        .catch(function(err){
+            console.log("Error at /orderDelivered ",err);
             res.send(err);
         })
     })
@@ -117,3 +207,4 @@ Routes.prototype.newDBCreation = function () {
         return Promise.resolve(result);
     })
 }
+

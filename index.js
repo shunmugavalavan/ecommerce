@@ -1,17 +1,21 @@
-var Promise = require('bluebird');
-var express = require('express'); //
+var express = require('express'),
+     mysql = require('mysql'),
+     path = require('path'),
+     bodyParser = require('body-parser'),
+     cors = require('cors')
+     Promise = require('bluebird');
+
 var conf = require('./conf');
-var mysql = require('mysql');
 var Routes = require('./routes/route');
 var middleware = require('./middleware');
+
 var server = express();
 var app = {};
 var MODULE = "";
 app.conf = conf;
-var path = require('path');
-var bodyParser = require('body-parser'); 
-var cors = require('cors')
+
 server.use(cors());
+server.use(express.static('EcommerceUI'))
 
 //Connecting DB
 try {
@@ -24,19 +28,12 @@ try {
         console.log(`\n Database Connected as id :${connection.threadId}`);
         routesInst.newDBCreation();
     });
+    // job.start();
     app.db = connection;
     app.db = Promise.promisifyAll(app.db);
 } catch (err) {
     console.log(`\n Error in Running Server \n ${err}`);
 }
-
-
-function convertCase(str) {
-    var lower = String(str).replace(/_/gi, " ").toLowerCase();
-    return lower.replace(/(^| )(\w)/g, function(x) {
-      return x.toUpperCase();
-    });
-  }
 
 //Running Server
 try {
@@ -48,15 +45,14 @@ try {
     server.use(middleware.traceReq);
    
     server.listen(port, function () {
-        var date = new Date();
         console.log("\n=======================================================================================")
-        console.log(`\n Project Name: ${convertCase(conf.projectDatabase)} \n Running at  : ${host}:${port}\n Started Time: ${date}`);
+        console.log(`\n ${new Date()} Ecommerce Server \n Running at  : ${host}:${port}`);
         console.log("=======================================================================================\n")
     });
     app.server = server;
 
 } catch (err) {
-    console.log(`\n Error in Running Server \n ${err}`);
+    console.log(`\n ${new Date()} Error in Running Server \n ${err}`);
     process.exit();
 }
 
@@ -69,11 +65,11 @@ routesInst.init(app);
  * Global Exception Handler
  ******************************************************************************************/
 process.on('uncaughtException', function (err) {
-    console.log(`\n Exception handled @ [' ${MODULE}'] uncaughtException ${err.stack}`);
+    console.log(`\n ${new Date()} Exception handled @ [' ${MODULE}'] uncaughtException ${err.stack}`);
 });
 process.on('unhandledException', function (err) {
-    console.log(`\n Unhandled Exception handled @ ['${ MODULE}'] uncaughtException' ${ err.stack}`);
+    console.log(`\n ${new Date()} Unhandled Exception handled @ ['${ MODULE}'] uncaughtException' ${ err.stack}`);
 });
 process.on('typeError', function (err) {
-    console.log(`\n Type Error handled @ ['${MODULE}'] uncaughtException' ${err.stack}`);
+    console.log(`\n ${new Date()} Type Error handled @ ['${MODULE}'] uncaughtException' ${err.stack}`);
 });

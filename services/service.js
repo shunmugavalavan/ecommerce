@@ -27,14 +27,36 @@ Services.prototype.createDatabase = function () {
             })
             .then(function (results) {
                 if (results && (results).toString() && (results).toString().length) {
-                    var tableNames = Object.keys(conf.tables)
+                    var tableNames = Object.keys(conf["tables"])
                   //   console.log("tableNames ",tableNames);
                     Promise.mapSeries(tableNames, function(tableName, index, arrayLength) {
+                    
+                        var creationQuery = conf.query[tableName]['creation'];
+                        // console.log(`\ncreating table ${tableName}  ${conf.query[tableName]}`);
+                        return db.queryAsync(creationQuery).then(function(tableResult) {
+                           // console.log(`\ntable ${tableName} created...`);
+                           let DataArr = conf.query[tableName]['data']
+                           if(DataArr && Array.isArray(DataArr) && DataArr.length){
 
-                        var query = conf.query[tableName];
-                        // console.log("query: ",query);
-                        return db.queryAsync(query).then(function(tableResult) {
-                            return tableResult;
+                              return self.checkCount(conf["tables"][tableName])
+                              .then(function(countRes){
+                                 if(countRes.status){
+                                    return countRes;
+                                 }
+                                 return Promise.mapSeries(DataArr, function(curData, index, arrayLength) {
+                                    // console.log("curData",curData)
+                                    var insertQuery = `INSERT INTO ${conf["tables"][tableName]}  SET ?`;
+                                    var criteria =curData;
+                                    return self.db.queryAsync(insertQuery, criteria)
+                                 })
+                              })
+                           
+                           }else{
+                              // console.log("nothing to insert");
+                              return tableResult;
+                           }
+                           
+                            
                         });
                     }).then(function(result) {
                         console.log("\n All tables created Done!");
@@ -59,9 +81,11 @@ Services.prototype.createDatabase = function () {
     }
 
 Services.prototype.getEntities = function(table, criteria, about) {
+   console.log("getEntities",table,criteria)
    var self = this;
    var response = {
-      status: false
+      status: false,
+      data:[]
    };
    var columns    = '*',
        condition  = '',
@@ -86,7 +110,7 @@ Services.prototype.getEntities = function(table, criteria, about) {
    }
 
    var query = `SELECT ${columns} FROM ${table} ${condition} ${sortOrder} ${pagination}`;
-
+   console.log("find query: ",query);
    console.log('\n--------------------------------------------------------------------------------------------------');
    console.log(new Date() + `    FINDING ${about ? about : ''} DATA at table : ${table} \nQuery : ${query}`);
    console.log('----------------------------------------------------------------------------------------------------\n');
@@ -232,9 +256,9 @@ Services.prototype.checkCount = function(table, criteria, about) {
       query += ` WHERE ${criteria.condition}`;
    }
 
-   console.log('\n--------------------------------------------------------------------------------------------------');
-   console.log(new Date() + `    CHECKING ${about ? about : ''} COUNT at table : ${table} \nQuery : ${query}`);
-   console.log('----------------------------------------------------------------------------------------------------\n');
+   // console.log('\n--------------------------------------------------------------------------------------------------');
+   // console.log(new Date() + `    CHECKING ${about ? about : ''} COUNT at table : ${table} \nQuery : ${query}`);
+   // console.log('----------------------------------------------------------------------------------------------------\n');
 
    return new Promise(function(resolve, reject) {
       self.db.queryAsync(query)
