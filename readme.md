@@ -35,5 +35,7 @@ API Collection -> ecommerce.postman_collection.json
 
 Environment    -> ecommerce.postman_environment.json
 
+sample product file -> products.csv
+
 
 
