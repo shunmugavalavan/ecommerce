@@ -1,8 +1,6 @@
 const conf = require('./conf');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-var cookieParser = require("cookie-parser");
-const isIp = require('is-ip');
 var reqMethod = {
   "POST" : "body",
   "GET" : "query"
@@ -21,32 +19,21 @@ exports.plainTextToEncryptHash = async function (plainText) {
 
 }
 
-// res.cookie("context", "myContext", { httpOnly: true });
-// res.redirect("/");
-
 exports.authenticateToken = function (req, res, next) {
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
 
   if (token == null) {
-    var string = encodeURIComponent();
-    req.method = 'get'; 
-    // return res.redirect(`${conf.web.url}/login?status=sessionExpired`);
     return res.sendStatus(401);
   }
 
   jwt.verify(token, conf.jsonwebtoken.secret, (err, user) => {
     if (err) {
-
-      // console.log(err);
       return res.sendStatus(403);
-      
-      // return res.redirect(`${conf.web.url}/login?status=sessionExpired`);
     }
     req.customerId = user.customerId;
-// console.log("user",user)
-    req.user = user
-    next()
+    req.user = user;
+    next();
   })
 }
 

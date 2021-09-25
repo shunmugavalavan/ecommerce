@@ -13,9 +13,11 @@ var server = express();
 var app = {};
 var MODULE = "";
 app.conf = conf;
-
 server.use(cors());
-server.use(express.static('EcommerceUI'))
+
+global.__basedir = __dirname;
+
+// server.use(express.static('EcommerceUI'))
 
 //Connecting DB
 try {
@@ -41,7 +43,8 @@ try {
     var host = conf.server.host;
     server.use(express.static(path.resolve('views')));
     server.set('trust proxy', true);
-    server.use(bodyParser.json());
+    server.use(express.urlencoded({extended: true}));
+    server.use(express.json());
     server.use(middleware.traceReq);
    
     server.listen(port, function () {

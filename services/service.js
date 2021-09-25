@@ -44,7 +44,7 @@ Services.prototype.createDatabase = function () {
                                     return countRes;
                                  }
                                  return Promise.mapSeries(DataArr, function(curData, index, arrayLength) {
-                                    // console.log("curData",curData)
+                                    console.log("curData",curData)
                                     var insertQuery = `INSERT INTO ${conf["tables"][tableName]}  SET ?`;
                                     var criteria =curData;
                                     return self.db.queryAsync(insertQuery, criteria)
@@ -78,7 +78,7 @@ Services.prototype.createDatabase = function () {
             process.exit();
             });
         })
-    }
+};
 
 Services.prototype.getEntities = function(table, criteria, about) {
    console.log("getEntities",table,criteria)
@@ -210,6 +210,42 @@ Services.prototype.createEntities = function(table, criteria, about) {
    });
 };
 
+Services.prototype.bulkUpload = function(table, criteria, about) {
+   // console.log("criteria",criteria)
+   var self = this;
+   var response = {
+      status: false
+   };
+
+   var query = `INSERT INTO ${table} (${criteria.columns}) VALUES  ?`;
+   console.log('\n--------------------------------------------------------------------------------------------------');
+   console.log(new Date() + `    INSERTING ${about ? about : ''} DATA at table : ${table} \nFields : ${JSON.stringify(criteria)}`);
+   console.log('----------------------------------------------------------------------------------------------------\n');
+
+   return new Promise(function(resolve, reject) {
+      self.db.queryAsync(query, [criteria.data])
+          .then(function(result) {
+             if(result && result.affectedRows > 0) {
+                console.log(new Date() + `  [INFO] - [DB] BULK DATA SUCCESSFULLY INSERTED AT : ${table} || Inserted Data Count: ${result.affectedRows}`);
+                response.status = true;
+                response.data = result.affectedRows;
+                resolve(response);
+             }
+             else {
+                console.warn(new Date() + `  [NOTE] - [DB]  NO DATA INSERTED AT : : ${table} || CRITERIA : ${query}`);
+                response.message = "Failed to Insert Data";
+                resolve(response);
+             }
+          })
+          .catch(function(err) {
+             console.log('***************************************************************************************');
+             console.warn(new Date() + ` [ERROR] - [DB]  => => FAILED TO INSERT AT : ${table}\n CRITERIA IS: ${JSON.stringify(criteria)}\n ERROR IS: ${err}`);
+             console.log('***************************************************************************************');
+             reject(err.message);
+          });
+   });
+};
+
 Services.prototype.deleteEntities = function(table, criteria, about) {
    var self = this;
    var response = {
@@ -223,7 +259,7 @@ Services.prototype.deleteEntities = function(table, criteria, about) {
    return new Promise(function(resolve, reject) {
       self.db.queryAsync(query)
           .then(function(result) {
-             // console.log("delete rec --> ",result);
+
              if(result && result.affectedRows && parseInt(result.affectedRows) > 0) {
                 console.log(new Date() + ` [INFO] - [DB]  DATA SUCCESSFULLY DELETED AT : ${table} || deleted Rec(s): ${result.affectedRows} `);
                 response.status = true;
@@ -256,15 +292,10 @@ Services.prototype.checkCount = function(table, criteria, about) {
       query += ` WHERE ${criteria.condition}`;
    }
 
-   // console.log('\n--------------------------------------------------------------------------------------------------');
-   // console.log(new Date() + `    CHECKING ${about ? about : ''} COUNT at table : ${table} \nQuery : ${query}`);
-   // console.log('----------------------------------------------------------------------------------------------------\n');
-
    return new Promise(function(resolve, reject) {
       self.db.queryAsync(query)
           .then(function(result) {
-             // console.log(" COUNT result --> ",result[0]['count']);
-             // console.log(" COUNT JSON result --> ",JSON.stringify(result[0]));
+
              if(result && result[0] && (result[0]['count']) > 0) {
                 console.log(new Date() + ` [INFO] - [DB]  DATA FOUND  AT : ${table} || COUNT : ${result[0]['count']}`);
                 response.status = true;

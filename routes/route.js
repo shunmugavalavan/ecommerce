@@ -1,5 +1,7 @@
 var Promise = require('bluebird');
 var middleware = require('../middleware');
+
+const multer = require('multer');
 var path = require('path');
 // Connecting Actions
 var apiActions = require('../actions/action');
@@ -11,6 +13,16 @@ var Routes = function (app) {
 
 };
 module.exports = Routes;
+
+const storage = multer.diskStorage({
+	destination: (req, file, cb) => {
+	   cb(null, __basedir + '/uploads/')
+	},
+	filename: (req, file, cb) => {
+	   cb(null, file.fieldname + "-" + Date.now() + "-" + file.originalname)
+	}
+});
+const upload = multer({storage: storage});
 
 Routes.prototype.init = function () {
     var self = this;
@@ -36,7 +48,6 @@ Routes.prototype.init = function () {
     })
 
     app.post('/login',function (req,res) {
-
         Promise.resolve()
         .then(function(){
             return self.apiActionInstance.login(req)
@@ -46,36 +57,6 @@ Routes.prototype.init = function () {
         })
         .catch(function(err){
             console.log("Error at /login ",err);
-            res.send(err);
-        })
-    })
-
-    app.get('/getBrands',middleware.authenticateToken,function (req,res) {
-
-        Promise.resolve()
-        .then(function(){
-            return self.apiActionInstance.getBrands(req)
-        })
-        .then(function(finalResult){
-           res.send(finalResult);
-        })
-        .catch(function(err){
-            console.log("Error at /getBrands ",err);
-            res.send(err);
-        })
-    })
-
-    app.get('/getSuppliers',middleware.authenticateToken,function (req,res) {
-
-        Promise.resolve()
-        .then(function(){
-            return self.apiActionInstance.getSuppliers(req)
-        })
-        .then(function(finalResult){
-           res.send(finalResult);
-        })
-        .catch(function(err){
-            console.log("Error at /getSuppliers ",err);
             res.send(err);
         })
     })
@@ -95,11 +76,11 @@ Routes.prototype.init = function () {
         })
     })
 
-    app.post('/addProduct',middleware.authenticateToken,function (req,res) {
-
+    app.post('/uploadProducts',middleware.authenticateToken,upload.single("productsFile"), function (req,res) {
+        let filePath = __basedir + '/uploads/' + req.file.filename;
         Promise.resolve()
         .then(function(){
-            return self.apiActionInstance.addNewProduct(req)
+            return self.apiActionInstance.uploadProducts(req,filePath)
         })
         .then(function(finalResult){
            res.send(finalResult);
@@ -109,9 +90,9 @@ Routes.prototype.init = function () {
             res.send(err);
         })
     })
-// middleware.authenticateToken
-app.post('/updateProduct',middleware.authenticateToken,function (req,res) {
 
+    app.patch('/updateProduct',middleware.authenticateToken,function (req,res) {
+        console.log("patch called....");
     Promise.resolve()
     .then(function(){
         return self.apiActionInstance.updateProduct(req)
@@ -123,9 +104,24 @@ app.post('/updateProduct',middleware.authenticateToken,function (req,res) {
         console.log("Error at /updateProduct ",err);
         res.send(err);
     })
-})
+    })
 
-app.get('/getMyOrders',middleware.authenticateToken,function (req,res) {
+    app.post('/placeOrder',middleware.authenticateToken,function (req,res) {
+
+    Promise.resolve()
+    .then(function(){
+        return self.apiActionInstance.placeOrder(req)
+    })
+    .then(function(finalResult){
+       res.send(finalResult);
+    })
+    .catch(function(err){
+        console.log("Error at /placeOrder ",err);
+        res.send(err);
+    })
+    })
+
+    app.get('/getMyOrders',middleware.authenticateToken,function (req,res) {
 
     Promise.resolve()
     .then(function(){
@@ -138,9 +134,9 @@ app.get('/getMyOrders',middleware.authenticateToken,function (req,res) {
         console.log("Error at /getMyOrders ",err);
         res.send(err);
     })
-})
+    })
 
-app.get('/getAllOrders',middleware.authenticateToken,function (req,res) {
+    app.get('/getAllOrders',middleware.authenticateToken,function (req,res) {
 
     Promise.resolve()
     .then(function(){
@@ -153,21 +149,8 @@ app.get('/getAllOrders',middleware.authenticateToken,function (req,res) {
         console.log("Error at /getAllOrders ",err);
         res.send(err);
     })
-})
-    app.post('/placeOrder',middleware.authenticateToken,function (req,res) {
-
-        Promise.resolve()
-        .then(function(){
-            return self.apiActionInstance.placeOrder(req)
-        })
-        .then(function(finalResult){
-           res.send(finalResult);
-        })
-        .catch(function(err){
-            console.log("Error at /placeOrder ",err);
-            res.send(err);
-        })
     })
+
 
     app.post('/cancelOrder',middleware.authenticateToken,function (req,res) {
 
